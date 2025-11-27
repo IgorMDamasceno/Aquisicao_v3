@@ -768,22 +768,22 @@ function todayIso(){
         blocks.forEach(function(block){
             basisMap[String(block.page||'')+'||'+String(block.label||'')] = block.suggestionBasis || {};
         });
-        var target = parseFloat(targetValue);
-        if (!isFinite(target)) target = NaN;
+          var target = parseFloat(targetValue);
+          if (!isFinite(target)) target = NaN;
 
-        var grouped = { Quiz: {}, P1: {}, P2: {} };
-        blocks.forEach(function(block){
-            var part = block.parte || '';
-            if (!grouped[part]) grouped[part] = {};
-            var label = block.label || '-';
-            if (!grouped[part][label]) grouped[part][label] = [];
-            var metrics = block.metrics || {};
-            grouped[part][label].push({
-                page: block.page || '-',
-                metrics: metrics,
-                suggestion: getCoordinationSuggestion(block, target, basisMap)
-            });
-        });
+          var grouped = { Quiz: {}, P1: {}, P2: {} };
+          blocks.forEach(function(block){
+              var part = block.parte || '';
+              if (!grouped[part]) grouped[part] = {};
+              var label = normalizeBlockLabel(part, block.label);
+              if (!grouped[part][label]) grouped[part][label] = [];
+              var metrics = block.metrics || {};
+              grouped[part][label].push({
+                  page: block.page || '-',
+                  metrics: metrics,
+                  suggestion: getCoordinationSuggestion(block, target, basisMap)
+              });
+          });
 
         function tableFor(list){
             if (!list || !list.length) return '';
@@ -1633,15 +1633,15 @@ function todayIso(){
     function coordBlockSortIndicator(k){ if (COORD_BLOCK_SORT.metric !== k) return ''; return COORD_BLOCK_SORT.dir === 'asc' ? ' ▲' : ' ▼'; }
     // --- FIM: Funções de ordenação de Bloco (Coordenação) ---
 
-    function sortDetails(details, hourly){
-      var primaryKey = SORT.by || 'revenue';
-      var primaryDir = SORT.dir || 'desc';
-      var mul = (primaryDir === 'asc' ? 1 : -1);
-      details.sort(function(a, b) {
-        const getValue = (item, key) => {
-          if (key === 'hour') return item.hour ?? -1;
-          if (key === 'adunit') return item.adunit || '';
-          return item.metrics?.[key] ?? 0;
+      function sortDetails(details, hourly){
+        var primaryKey = SORT.by || 'revenue';
+        var primaryDir = SORT.dir || 'desc';
+        var mul = (primaryDir === 'asc' ? 1 : -1);
+        details.sort(function(a, b) {
+          const getValue = (item, key) => {
+            if (key === 'hour') return item.hour ?? -1;
+            if (key === 'adunit') return item.adunit || '';
+            return item.metrics?.[key] ?? 0;
         };
         const valA_primary = getValue(a, primaryKey);
         const valB_primary = getValue(b, primaryKey);
@@ -1652,12 +1652,10 @@ function todayIso(){
         if (valA_hour < valB_hour) return -1;
         if (valA_hour > valB_hour) return 1;
         return (getValue(b, 'revenue') - getValue(a, 'revenue'));
-      });
-      return details;
-    }
+        });
+        return details;
+      }
 
-    function createCompareBlocksCard(compareBlocks){
-      var grouped = { P1: {}, P2: {}, Quiz: {} };
       function normalizeBlockLabel(part, label){
         var safeLabel = label || '-';
         var low = safeLabel.toLowerCase();
@@ -1665,6 +1663,9 @@ function todayIso(){
         if (part === 'P2' && (low.includes('offerwall') || low.includes('rewarded'))) return 'mob_offerwall (P2)';
         return safeLabel;
       }
+
+      function createCompareBlocksCard(compareBlocks){
+        var grouped = { P1: {}, P2: {}, Quiz: {} };
 
       compareBlocks.forEach(function(r){
         var part = r.parte || '';
