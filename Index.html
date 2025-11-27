@@ -822,7 +822,7 @@ function todayIso(){
             var partGroups = grouped[partKey] || {};
             var labelsInOrder = [];
             if (partKey === 'Quiz') labelsInOrder = ['rewarded (Quiz)'];
-            if (partKey === 'P1') labelsInOrder = ['mob_top (P1)', 'mob_interstitial (P1)'];
+            if (partKey === 'P1') labelsInOrder = ['mob_top (P1)', 'mob_interstitial (P1)', 'mob_offerwall (P1)'];
             if (partKey === 'P2') labelsInOrder = ['mob_top (P2)', 'mob_offerwall (P2)'];
             var seen = {};
             var innerHtml = '';
@@ -881,23 +881,42 @@ function todayIso(){
         function money3(val){ return money(val || 0, 3); }
 
         if (parte === 'P1') {
-            var thresholds = label.toLowerCase().includes('interstitial') ? { high: 95, low: 80 } : { high: 80, low: 30 };
-            if (coverage > thresholds.high) {
-                suggestion = 'Aumentar a regra';
-                reason = 'Cobertura acima de '+thresholds.high+'%';
-            } else if (coverage < thresholds.low) {
-                suggestion = 'Reduzir a regra';
-                reason = 'Cobertura abaixo de '+thresholds.low+'%';
-            } else {
-                if (!isFinite(target) || target <= 0) {
-                    return 'Informe o CPC alvo para gerar uma sugestão';
+            if (label.toLowerCase().includes('offerwall')) {
+                var refP1 = basisMap[String(block.page||'')+'||mob_top (P1)'];
+                if (!refP1 || !refP1.hasData) {
+                    return 'Sem referência do bloco mob_top (P1) para comparar';
                 }
-                if (cpc < target) {
+                var corrP1 = Number(basis.cpcCorrigido || 0);
+                var refCpcP1 = Number(refP1.cpc || 0);
+                if (!(corrP1 > 0)) {
+                    return 'Sem dados de CPC corrigido suficientes';
+                }
+                if (corrP1 < refCpcP1) {
                     suggestion = 'Aumentar a regra';
-                    reason = 'CPC ('+money3(cpc)+') abaixo do alvo ('+money3(target)+')';
+                    reason = 'CPC Corrigido ('+money3(corrP1)+') abaixo do mob_top P1 ('+money3(refCpcP1)+')';
                 } else {
                     suggestion = 'Manter a regra';
-                    reason = 'CPC ('+money3(cpc)+') dentro ou acima do alvo';
+                    reason = 'CPC Corrigido maior ou igual ao mob_top P1';
+                }
+            } else {
+                var thresholds = label.toLowerCase().includes('interstitial') ? { high: 95, low: 80 } : { high: 80, low: 30 };
+                if (coverage > thresholds.high) {
+                    suggestion = 'Aumentar a regra';
+                    reason = 'Cobertura acima de '+thresholds.high+'%';
+                } else if (coverage < thresholds.low) {
+                    suggestion = 'Reduzir a regra';
+                    reason = 'Cobertura abaixo de '+thresholds.low+'%';
+                } else {
+                    if (!isFinite(target) || target <= 0) {
+                        return 'Informe o CPC alvo para gerar uma sugestão';
+                    }
+                    if (cpc < target) {
+                        suggestion = 'Aumentar a regra';
+                        reason = 'CPC ('+money3(cpc)+') abaixo do alvo ('+money3(target)+')';
+                    } else {
+                        suggestion = 'Manter a regra';
+                        reason = 'CPC ('+money3(cpc)+') dentro ou acima do alvo';
+                    }
                 }
             }
         } else if (parte === 'P2' && label.toLowerCase().includes('mob_top')) {
@@ -1706,7 +1725,7 @@ function todayIso(){
         var partGroups = grouped[partKey] || {};
         var preferred = {
           Quiz: ['rewarded (Quiz)'],
-          P1: ['mob_top (P1)', 'mob_interstitial (P1)'],
+          P1: ['mob_top (P1)', 'mob_interstitial (P1)', 'mob_offerwall (P1)'],
           P2: ['mob_top (P2)', 'mob_offerwall (P2)']
         };
         var seen = {};
@@ -1901,7 +1920,7 @@ function todayIso(){
         cmp.innerHTML='<h3 class="text-lg font-bold mb-3">Comparativo — Total da Página</h3><div class="overflow-auto"><table class="w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-2">Página</th><th class="text-right py-2 pr-2">Receita</th><th class="text-right py-2 pr-2">Impressões</th><th class="text-right py-2 pr-2">Cliques</th><th class="text-right py-2 pr-2">CTR</th><th class="text-right py-2 pr-2">eCPM</th><th class="text-right py-2 pr-2">CPC</th><th class="text-right py-2 pr-2">CPC Corrigido</th><th class="text-right py-2 pr-2">RPS</th><th class="text-right py-2 pr-2">Taxa de interação</th></tr></thead><tbody>'+rowsHtml+totalRow+'</tbody></table></div>';
         hostC.appendChild(cmp);
       }
-      var chartBox=document.createElement('div');chartBox.className='card rounded-2xl p-5';chartBox.innerHTML='<div class="flex items-center justify-between gap-4 flex-wrap"><h3 class="text-lg font-bold">Evolução por Hora</h3><div class="flex items-center gap-4 text-sm flex-wrap"><div class="flex items-center gap-2"><label for="cmp-block" class="text-slate-300">Bloco:</label><select id="cmp-block" class="pill rounded-lg px-3 py-1.5"><option value="Total" selected>Total</option><option value="mob_top (P1)">mob_top (P1)</option><option value="mob_interstitial (P1)">mob_interstitial (P1)</option><option value="mob_offerwall (P2)">mob_offerwall (P2)</option><option value="mob_top (P2)">mob_top (P2)</option><option value="rewarded (Quiz)">rewarded (Quiz)</option></select></div><div class="flex items-center gap-2"><label for="cmp-metric" class="text-slate-300">Métrica:</label><select id="cmp-metric" class="pill rounded-lg px-3 py-1.5"><option value="rps" selected>RPS</option><option value="cpc">CPC</option><option value="interactionRate">Taxa de interação</option><option value="ecpm">eCPM</option><option value="coverage">Cobertura</option><option value="effectiveEcpm">eCPM Efetivo</option></select></div></div></div><div class="relative w-full h-96 mt-4"><canvas id="cmp-canvas"></canvas></div>'+(!res.seriesChart||!res.seriesChart.length?'<div class="text-slate-400 text-sm mt-2">Sem dados suficientes para o gráfico.</div>':'');hostC.appendChild(chartBox);
+      var chartBox=document.createElement('div');chartBox.className='card rounded-2xl p-5';chartBox.innerHTML='<div class="flex items-center justify-between gap-4 flex-wrap"><h3 class="text-lg font-bold">Evolução por Hora</h3><div class="flex items-center gap-4 text-sm flex-wrap"><div class="flex items-center gap-2"><label for="cmp-block" class="text-slate-300">Bloco:</label><select id="cmp-block" class="pill rounded-lg px-3 py-1.5"><option value="Total" selected>Total</option><option value="mob_top (P1)">mob_top (P1)</option><option value="mob_interstitial (P1)">mob_interstitial (P1)</option><option value="mob_offerwall (P1)">mob_offerwall (P1)</option><option value="mob_offerwall (P2)">mob_offerwall (P2)</option><option value="mob_top (P2)">mob_top (P2)</option><option value="rewarded (Quiz)">rewarded (Quiz)</option></select></div><div class="flex items-center gap-2"><label for="cmp-metric" class="text-slate-300">Métrica:</label><select id="cmp-metric" class="pill rounded-lg px-3 py-1.5"><option value="rps" selected>RPS</option><option value="cpc">CPC</option><option value="interactionRate">Taxa de interação</option><option value="ecpm">eCPM</option><option value="coverage">Cobertura</option><option value="effectiveEcpm">eCPM Efetivo</option></select></div></div></div><div class="relative w-full h-96 mt-4"><canvas id="cmp-canvas"></canvas></div>'+(!res.seriesChart||!res.seriesChart.length?'<div class="text-slate-400 text-sm mt-2">Sem dados suficientes para o gráfico.</div>':'');hostC.appendChild(chartBox);
       if(res.seriesChart&&res.seriesChart.length){function redraw(){setupCompareChart(LAST_RES);}byId('cmp-metric').onchange=redraw;byId('cmp-block').onchange=redraw;redraw();}
       if(res.compareBlocks && res.compareBlocks.length){
         hostC.appendChild(createCompareBlocksCard(res.compareBlocks));
@@ -2007,6 +2026,15 @@ function todayIso(){
           else { sugg = 'Manter a regra'; reason = 'Cobertura (80-95%) e CPC >= Alvo'; }
           var adjustedInterstitial = applyEcpmCap(sugg, reason, mobInterstitial.ecpm);
           suggestionsHtml += generateCard('P1: mob_interstitial', adjustedInterstitial.suggestion, adjustedInterstitial.reason, { [periodLabel]: periodValue, Cobertura: pct(mobInterstitial.coverage, 2), CPC: money(mobInterstitial.cpc, 3), 'Alvo': money(cpcAlvo, 3), 'eCPM': money(mobInterstitial.ecpm) });
+        }
+        const offerwallP1 = getAggregatedMetrics(filteredDetails, 'offerwall') || getAggregatedMetrics(filteredDetails, 'rewarded');
+        if (offerwallP1 && mobTop) {
+          let sugg = '', reason = '';
+          if (offerwallP1.cpcCorrigido > (1.1 * cpcAlvo)) { sugg = 'Reduzir a regra'; reason = 'CPC Corrigido > 110% do CPC Alvo'; }
+          else if (offerwallP1.cpcCorrigido < mobTop.cpc) { sugg = 'Aumentar a regra'; reason = 'CPC Corrigido < CPC mob_top P1'; }
+          else { sugg = 'Manter a regra'; reason = 'CPC Corrigido >= CPC mob_top P1'; }
+          var adjustedOfferwallP1 = applyEcpmCap(sugg, reason, offerwallP1.ecpm);
+          suggestionsHtml += generateCard('P1: offerwall/rewarded', adjustedOfferwallP1.suggestion, adjustedOfferwallP1.reason, { [periodLabel]: periodValue, 'CPC Corrigido': money(offerwallP1.cpcCorrigido, 3), 'CPC mob_top P1': money(mobTop.cpc, 3), 'eCPM': money(offerwallP1.ecpm) });
         }
       } else if (partData.parte === 'P2') {
         const mobTopP2 = getAggregatedMetrics(filteredDetails, 'mob_top');
