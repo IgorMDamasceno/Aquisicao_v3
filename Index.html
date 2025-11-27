@@ -1989,7 +1989,8 @@ function todayIso(){
         const mobTop = getAggregatedMetrics(filteredDetails, 'mob_top');
         if (mobTop) {
           let sugg = '', reason = '';
-          if (mobTop.coverage > 80) { sugg = 'Aumentar a regra'; reason = 'Cobertura > 80%'; }
+          if (mobTop.cpc > (1.1 * cpcAlvo)) { sugg = 'Reduzir a regra'; reason = 'CPC > 110% do CPC Alvo'; }
+          else if (mobTop.coverage > 80) { sugg = 'Aumentar a regra'; reason = 'Cobertura > 80%'; }
           else if (mobTop.coverage < 30) { sugg = 'Reduzir a regra'; reason = 'Cobertura < 30%'; }
           else if (mobTop.cpc < cpcAlvo) { sugg = 'Aumentar a regra'; reason = 'Cobertura (30-80%) e CPC < Alvo'; }
           else { sugg = 'Manter a regra'; reason = 'Cobertura (30-80%) e CPC >= Alvo'; }
@@ -1999,7 +2000,8 @@ function todayIso(){
         const mobInterstitial = getAggregatedMetrics(filteredDetails, 'mob_interstitial');
         if (mobInterstitial) {
           let sugg = '', reason = '';
-          if (mobInterstitial.coverage > 95) { sugg = 'Aumentar a regra'; reason = 'Cobertura > 95%'; }
+          if (mobInterstitial.cpc > (1.1 * cpcAlvo)) { sugg = 'Reduzir a regra'; reason = 'CPC > 110% do CPC Alvo'; }
+          else if (mobInterstitial.coverage > 95) { sugg = 'Aumentar a regra'; reason = 'Cobertura > 95%'; }
           else if (mobInterstitial.coverage < 80) { sugg = 'Reduzir a regra'; reason = 'Cobertura < 80%'; }
           else if (mobInterstitial.cpc < cpcAlvo) { sugg = 'Aumentar a regra'; reason = 'Cobertura (>80%) e CPC < Alvo'; }
           else { sugg = 'Manter a regra'; reason = 'Cobertura (80-95%) e CPC >= Alvo'; }
@@ -2019,7 +2021,8 @@ function todayIso(){
         const offerwall = getAggregatedMetrics(filteredDetails, 'offerwall') || getAggregatedMetrics(filteredDetails, 'rewarded');
         if (offerwall && mobTopP2) {
           let sugg = '', reason = '';
-          if (offerwall.cpcCorrigido < mobTopP2.cpc) { sugg = 'Aumentar a regra'; reason = 'CPC Corrigido < CPC mob_top P2'; }
+          if (offerwall.cpcCorrigido > (1.1 * cpcAlvo)) { sugg = 'Reduzir a regra'; reason = 'CPC Corrigido > 110% do CPC Alvo'; }
+          else if (offerwall.cpcCorrigido < mobTopP2.cpc) { sugg = 'Aumentar a regra'; reason = 'CPC Corrigido < CPC mob_top P2'; }
           else { sugg = 'Manter a regra'; reason = 'CPC Corrigido >= CPC mob_top P2'; }
           var adjustedOfferwall = applyEcpmCap(sugg, reason, offerwall.ecpm);
           suggestionsHtml += generateCard('P2: offerwall/rewarded', adjustedOfferwall.suggestion, adjustedOfferwall.reason, { [periodLabel]: periodValue, 'CPC Corrigido': money(offerwall.cpcCorrigido, 3), 'CPC mob_top P2': money(mobTopP2.cpc, 3), 'eCPM': money(offerwall.ecpm) });
