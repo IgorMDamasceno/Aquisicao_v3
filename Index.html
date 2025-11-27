@@ -766,7 +766,8 @@ function todayIso(){
         });
         var basisMap = {};
         blocks.forEach(function(block){
-            basisMap[String(block.page||'')+'||'+String(block.label||'')] = block.suggestionBasis || {};
+            var normalizedLabel = normalizeBlockLabel(block.parte || '', block.label);
+            basisMap[String(block.page||'')+'||'+normalizedLabel] = block.suggestionBasis || {};
         });
           var target = parseFloat(targetValue);
           if (!isFinite(target)) target = NaN;
@@ -869,6 +870,7 @@ function todayIso(){
     function getCoordinationSuggestion(block, target, basisMap){
         var label = String(block && block.label ? block.label : '');
         var parte = String(block && block.parte ? block.parte : '');
+        var normalizedLabel = normalizeBlockLabel(parte, label);
         var basis = block && block.suggestionBasis ? block.suggestionBasis : {};
         if (!basis.hasData) {
             return 'Sem dados recentes para sugerir ajuste';
@@ -880,8 +882,10 @@ function todayIso(){
 
         function money3(val){ return money(val || 0, 3); }
 
+        var normalizedLower = normalizedLabel.toLowerCase();
+
         if (parte === 'P1') {
-            if (label.toLowerCase().includes('offerwall')) {
+            if (normalizedLower.includes('offerwall')) {
                 var refP1 = basisMap[String(block.page||'')+'||mob_top (P1)'];
                 if (!refP1 || !refP1.hasData) {
                     return 'Sem referência do bloco mob_top (P1) para comparar';
@@ -899,7 +903,7 @@ function todayIso(){
                     reason = 'CPC Corrigido maior ou igual ao mob_top P1';
                 }
             } else {
-                var thresholds = label.toLowerCase().includes('interstitial') ? { high: 95, low: 80 } : { high: 80, low: 30 };
+                var thresholds = normalizedLower.includes('interstitial') ? { high: 95, low: 80 } : { high: 80, low: 30 };
                 if (coverage > thresholds.high) {
                     suggestion = 'Aumentar a regra';
                     reason = 'Cobertura acima de '+thresholds.high+'%';
@@ -919,7 +923,7 @@ function todayIso(){
                     }
                 }
             }
-        } else if (parte === 'P2' && label.toLowerCase().includes('mob_top')) {
+        } else if (parte === 'P2' && normalizedLower.includes('mob_top')) {
             if (coverage > 80) {
                 suggestion = 'Aumentar a regra';
                 reason = 'Cobertura acima de 80%';
@@ -930,7 +934,7 @@ function todayIso(){
                 suggestion = 'Manter a regra';
                 reason = 'Cobertura entre 70% e 80%';
             }
-        } else if (parte === 'P2' && label.toLowerCase().includes('offerwall')) {
+        } else if (parte === 'P2' && normalizedLower.includes('offerwall')) {
             var ref = basisMap[String(block.page||'')+'||mob_top (P2)'];
             if (!ref || !ref.hasData) {
                 return 'Sem referência do bloco mob_top (P2) para comparar';
@@ -1659,8 +1663,16 @@ function todayIso(){
       function normalizeBlockLabel(part, label){
         var safeLabel = label || '-';
         var low = safeLabel.toLowerCase();
-        if (part === 'P1' && (low.includes('offerwall') || low.includes('rewarded'))) return 'mob_offerwall (P1)';
-        if (part === 'P2' && (low.includes('offerwall') || low.includes('rewarded'))) return 'mob_offerwall (P2)';
+        if (part === 'P1') {
+          if (low.includes('offerwall') || low.includes('rewarded')) return 'mob_offerwall (P1)';
+          if (low.includes('interstitial')) return 'mob_interstitial (P1)';
+          if (low.includes('mob_top')) return 'mob_top (P1)';
+        }
+        if (part === 'P2') {
+          if (low.includes('offerwall') || low.includes('rewarded')) return 'mob_offerwall (P2)';
+          if (low.includes('mob_top')) return 'mob_top (P2)';
+        }
+        if (part === 'Quiz' && low.includes('rewarded')) return 'rewarded (Quiz)';
         return safeLabel;
       }
 
